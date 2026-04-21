@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --green: #1db954;
+            --green-bright: #1ed760;
+            --bg: #0a0a0a;
+            --surface: #111111;
+            --surface2: #181818;
+            --surface3: #222222;
+            --border: #2a2a2a;
+            --text: #ffffff;
+            --muted: #727272;
+            --muted2: #404040;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Syne', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .app {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            grid-template-rows: 1fr 88px;
+            height: 100vh;
+            gap: 6px;
+            padding: 6px;
+        }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            grid-row: 1 / 2;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            overflow: hidden;
+        }
+
+        .logo-box {
+            background: var(--surface);
+            border-radius: 10px;
+            padding: 16px 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid var(--border);
+        }
+        .logo-box svg { width: 28px; height: 28px; fill: var(--green); }
+        .logo-box span { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+
+        .nav-box {
+            background: var(--surface);
+            border-radius: 10px;
+            padding: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 10px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--muted);
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.15s;
+            text-decoration: none;
+        }
+        .nav-item:hover { color: var(--text); background: var(--surface3); }
+        .nav-item.active { color: var(--text); }
+        .nav-item svg { width: 20px; height: 20px; fill: currentColor; flex-shrink: 0; }
+
+        .library-box {
+            background: var(--surface);
+            border-radius: 10px;
+            padding: 12px;
+            border: 1px solid var(--border);
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .library-box::-webkit-scrollbar { width: 4px; }
+        .library-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+        .lib-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px 8px 10px;
+        }
+        .lib-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--muted);
+            font-weight: 700;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .lib-header-left svg { width: 18px; height: 18px; fill: currentColor; }
+
+        .lib-header button {
+            background: none;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.15s;
+        }
+        .lib-header button:hover { color: var(--text); background: var(--surface3); }
+
+        .playlist-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .playlist-item:hover { background: var(--surface3); }
+        .playlist-item.active { background: var(--surface3); }
+
+        .pl-thumb {
+            width: 42px; height: 42px;
+            border-radius: 4px;
+            background: var(--surface3);
+            flex-shrink: 0;
+            overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .pl-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .pl-thumb svg { width: 18px; height: 18px; fill: var(--muted); }
+
+        .pl-info { overflow: hidden; }
+        .pl-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pl-meta { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+        /* ── MAIN ── */
+        .main {
+            background: var(--surface);
+            border-radius: 10px;
+            margin: 0;
+            overflow-y: auto;
+            position: relative;
+            border: 1px solid var(--border);
+        }
+        .main::-webkit-scrollbar { width: 6px; }
+        .main::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+        .main-header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            background: rgba(17,17,17,0.92);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            gap: 16px;
+        }
+
+        .search-wrap {
+            flex: 1;
+            max-width: 340px;
+            position: relative;
+        }
+        .search-wrap svg {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px; height: 16px;
+            fill: var(--muted);
+            pointer-events: none;
+        }
+        #search-input {
+            width: 100%;
+            background: var(--surface3);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 8px 14px 8px 36px;
+            color: var(--text);
+            font-family: 'Syne', sans-serif;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        #search-input::placeholder { color: var(--muted); }
+        #search-input:focus { border-color: var(--green); }
+
+        .header-right { display: flex; align-items: center; gap: 10px; }
+        .user-avatar {
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            background: var(--surface3);
+            border: 2px solid var(--green);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700;
+            cursor: pointer;
+            color: var(--green);
+        }
+
+        /* ── HERO ── */
+        .playlist-hero {
+            padding: 32px 24px 20px;
+            display: flex;
+            align-items: flex-end;
+            gap: 22px;
+            background: linear-gradient(160deg, #0d2016 0%, #111 60%);
+            min-height: 240px;
+        }
+
+        .hero-art {
+            width: 180px; height: 180px;
+            border-radius: 6px;
+            background: var(--surface3);
+            flex-shrink: 0;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+            overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .hero-art img { width: 100%; height: 100%; object-fit: cover; }
+        .hero-art svg { width: 56px; height: 56px; fill: var(--muted); }
+
+        .hero-info { flex: 1; }
+        .hero-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: var(--green); margin-bottom: 6px; }
+        .hero-title {
+            font-size: 48px;
+            font-weight: 800;
+            letter-spacing: -1.5px;
+            line-height: 1;
+            margin-bottom: 10px;
+        }
+        .hero-desc { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+        .hero-stats { font-size: 13px; color: var(--muted); }
+        .hero-stats span { color: var(--text); font-weight: 600; }
+
+        /* ── CONTROLS ── */
+        .controls-bar {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 18px 24px;
+        }
+        .big-play {
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            background: var(--green);
+            border: none;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.1s;
+            flex-shrink: 0;
+        }
+        .big-play:hover { transform: scale(1.06); background: var(--green-bright); }
+        .big-play svg { width: 20px; height: 20px; fill: #000; margin-left: 2px; }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            width: 30px; height: 30px;
+            display: flex; align-items: center; justify-content: center;
+            transition: color 0.15s;
+            border-radius: 4px;
+        }
+        .icon-btn:hover { color: var(--text); }
+        .icon-btn.active { color: var(--green); }
+        .icon-btn svg { width: 20px; height: 20px; fill: currentColor; }
+
+        .song-count-badge {
+            margin-left: auto;
+            font-size: 12px;
+            color: var(--muted);
+            font-family: 'Space Mono', monospace;
+        }
+
+        /* ── TRACK LIST ── */
+        .track-list { padding: 0 16px 100px; }
+
+        .track-list-header {
+            display: grid;
+            grid-template-columns: 44px 1fr 160px 60px;
+            gap: 12px;
+            padding: 0 12px 8px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 4px;
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .track-list-header .col-dur { text-align: right; }
+
+        .track-row {
+            display: grid;
+            grid-template-columns: 44px 1fr 160px 60px;
+            gap: 12px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.12s;
+            align-items: center;
+        }
+        .track-row:hover { background: var(--surface3); }
+        .track-row.playing { background: rgba(29,185,84,0.08); }
+        .track-row.playing .track-num { color: var(--green); }
+        .track-row.playing .t-title { color: var(--green); }
+
+        .track-num {
+            font-size: 13px;
+            color: var(--muted);
+            text-align: center;
+            font-family: 'Space Mono', monospace;
+            position: relative;
+        }
+        .track-num .num { display: block; }
+        .track-num .pi { display: none; }
+        .track-row:hover .track-num .num { display: none; }
+        .track-row:hover .track-num .pi { display: flex; align-items: center; justify-content: center; }
+        .track-row.playing .track-num .num { display: none; }
+        .track-row.playing .track-num .pi { display: flex; align-items: center; justify-content: center; }
+
+        .t-info { display: flex; align-items: center; gap: 11px; overflow: hidden; min-width: 0; }
+        .t-art {
+            width: 38px; height: 38px;
+            border-radius: 4px;
+            background: var(--surface3);
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .t-art img { width: 100%; height: 100%; object-fit: cover; }
+
+        .t-details { overflow: hidden; min-width: 0; }
+        .t-title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .t-artist { font-size: 11px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .t-album { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .t-dur { font-size: 12px; color: var(--muted); text-align: right; font-family: 'Space Mono', monospace; }
+
+        .no-results {
+            text-align: center;
+            padding: 60px 24px;
+            color: var(--muted);
+        }
+        .no-results h3 { font-size: 20px; color: var(--text); margin-bottom: 8px; }
+
+        /* ── PLAYER ── */
+        .player {
+            grid-column: 1 / -1;
+            background: #0d0d0d;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            align-items: center;
+            padding: 0 18px;
+            height: 88px;
+        }
+
+        .player-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+        .player-art {
+            width: 52px; height: 52px;
+            border-radius: 5px;
+            background: var(--surface3);
+            overflow: hidden; flex-shrink: 0;
+        }
+        .player-art img { width: 100%; height: 100%; object-fit: cover; }
+        .player-ti { overflow: hidden; min-width: 0; }
+        .player-name {
+            font-size: 13px; font-weight: 600;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            cursor: pointer;
+        }
+        .player-name:hover { text-decoration: underline; }
+        .player-artist { font-size: 11px; color: var(--muted); margin-top: 2px; cursor: pointer; }
+        .player-artist:hover { color: var(--text); text-decoration: underline; }
+
+        .p-heart { background: none; border: none; color: var(--muted); cursor: pointer; margin-left: 6px; padding: 4px; }
+        .p-heart:hover { color: var(--text); }
+        .p-heart svg { width: 15px; height: 15px; fill: currentColor; }
+
+        .player-center { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .player-controls { display: flex; align-items: center; gap: 12px; }
+        .player-controls button {
+            background: none; border: none;
+            color: var(--muted); cursor: pointer;
+            width: 30px; height: 30px;
+            display: flex; align-items: center; justify-content: center;
+            transition: color 0.15s; border-radius: 4px;
+        }
+        .player-controls button:hover { color: var(--text); }
+        .player-controls button svg { width: 15px; height: 15px; fill: currentColor; }
+
+        .p-play-btn {
+            width: 30px !important; height: 30px !important;
+            background: var(--text) !important;
+            border-radius: 50% !important;
+            color: #000 !important;
+        }
+        .p-play-btn:hover { transform: scale(1.08); }
+        .p-play-btn svg { fill: #000 !important; }
+
+        .p-progress { display: flex; align-items: center; gap: 8px; width: 100%; max-width: 500px; }
+        .p-time { font-size: 10px; color: var(--muted); min-width: 32px; font-family: 'Space Mono', monospace; }
+        .p-time.right { text-align: right; }
+
+        .prog-bar {
+            flex: 1; height: 3px;
+            background: var(--surface3);
+            border-radius: 2px;
+            cursor: pointer;
+            position: relative;
+        }
+        .prog-bar:hover { height: 5px; }
+        .prog-fill {
+            height: 100%; background: var(--text);
+            border-radius: 2px;
+            transition: width 0.1s linear;
+        }
+        .prog-bar:hover .prog-fill { background: var(--green); }
+        .prog-fill::after {
+            content: '';
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: var(--text);
+            position: absolute;
+            right: -5px; top: 50%;
+            transform: translateY(-50%);
+            opacity: 0;
+            transition: opacity 0.1s;
+        }
+        .prog-bar:hover .prog-fill::after { opacity: 1; }
+
+        .player-right { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+        .player-right button {
+            background: none; border: none;
+            color: var(--muted); cursor: pointer;
+            width: 28px; height: 28px;
+            display: flex; align-items: center; justify-content: center;
+            transition: color 0.15s;
+        }
+        .player-right button:hover { color: var(--text); }
+        .player-right button svg { width: 15px; height: 15px; fill: currentColor; }
+
+        .vol-bar {
+            width: 80px; height: 3px;
+            background: var(--surface3);
+            border-radius: 2px; cursor: pointer;
+        }
+        .vol-bar:hover { height: 5px; }
+        .vol-fill { height: 100%; background: var(--text); border-radius: 2px; width: 70%; }
+        .vol-bar:hover .vol-fill { background: var(--green); }
+
+        @media (max-width: 768px) {
+            .app { grid-template-columns: 1fr; }
+            .sidebar { display: none; }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="logo-box">
+            <svg viewBox="0 0 24 24"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+            <span>Spotify</span>
+        </div>
+
+        <div class="nav-box">
+            <a class="nav-item active" href="#">
+                <svg viewBox="0 0 24 24"><path d="M12.5 3.247a1 1 0 0 0-1 0L4 7.577V20h4.5v-6a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v6H20V7.577l-7.5-4.33zm-2-1.732a3 3 0 0 1 3 0l7.5 4.33a2 2 0 0 1 1 1.732V21a1 1 0 0 1-1 1h-6.5a1 1 0 0 1-1-1v-6h-3v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7.577a2 2 0 0 1 1-1.732l7.5-4.33z"/></svg>
+                Home
+            </a>
+            <a class="nav-item" href="#">
+                <svg viewBox="0 0 24 24"><path d="M10.533 1.279c-5.18 0-9.407 4.14-9.407 9.279s4.226 9.279 9.407 9.279c2.234 0 4.29-.77 5.907-2.058l4.353 4.353a1 1 0 1 0 1.414-1.414l-4.344-4.344a9.157 9.157 0 0 0 2.077-5.816c0-5.14-4.226-9.28-9.407-9.28zm-7.407 9.28c0-4.006 3.302-7.28 7.407-7.28s7.407 3.274 7.407 7.28-3.302 7.279-7.407 7.279-7.407-3.273-7.407-7.28z"/></svg>
+                Search
+            </a>
+        </div>
+
+        <div class="library-box">
+            <div class="lib-header">
+                <div class="lib-header-left">
+                    <svg viewBox="0 0 24 24"><path d="M3 22a1 1 0 0 1-1-1V3a1 1 0 0 1 2 0v18a1 1 0 0 1-1 1zM15.5 2.134A1 1 0 0 0 14 3v18a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V6.464a1 1 0 0 0-.5-.866l-6-3.464zM9 2a1 1 0 0 0-1 1v18a1 1 0 1 0 2 0V3a1 1 0 0 0-1-1z"/></svg>
+                    Library
+                </div>
+                <button onclick="createPlaylist()">
+                    <svg viewBox="0 0 16 16" width="14" height="14"><path d="M15.25 8a.75.75 0 0 1-.75.75H8.75v5.75a.75.75 0 0 1-1.5 0V8.75H1.5a.75.75 0 0 1 0-1.5h5.75V1.5a.75.75 0 0 1 1.5 0v5.75h5.75a.75.75 0 0 1 .75.75z" fill="currentColor"/></svg>
+                </button>
+            </div>
+            <div id="playlist-list"></div>
+        </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main" id="main-content">
+        <div class="main-header">
+            <div class="search-wrap">
+                <svg viewBox="0 0 24 24"><path d="M10.533 1.279c-5.18 0-9.407 4.14-9.407 9.279s4.226 9.279 9.407 9.279c2.234 0 4.29-.77 5.907-2.058l4.353 4.353a1 1 0 1 0 1.414-1.414l-4.344-4.344a9.157 9.157 0 0 0 2.077-5.816c0-5.14-4.226-9.28-9.407-9.28zm-7.407 9.28c0-4.006 3.302-7.28 7.407-7.28s7.407 3.274 7.407 7.28-3.302 7.279-7.407 7.279-7.407-3.273-7.407-7.28z"/></svg>
+                <input type="text" id="search-input" placeholder="Search songs, artists..." oninput="handleSearch(this.value)">
+            </div>
+            <div class="header-right">
+                <div class="user-avatar">U</div>
+            </div>
+        </div>
+        <div id="content-area"></div>
+    </div>
+
+    <!-- PLAYER -->
+    <div class="player">
+        <div class="player-left">
+            <div class="player-art" id="player-art"></div>
+            <div class="player-ti">
+                <div class="player-name" id="player-track-name">—</div>
+                <div class="player-artist" id="player-track-artist">—</div>
+            </div>
+            <button class="p-heart">
+                <svg viewBox="0 0 16 16"><path d="M1.69 2A4.582 4.582 0 0 1 8 2.023 4.583 4.583 0 0 1 11.88.817h.002a4.618 4.618 0 0 1 3.782 3.65v.003a4.543 4.543 0 0 1-1.011 3.84L9.35 14.629a1.765 1.765 0 0 1-2.093.464 1.762 1.762 0 0 1-.605-.463L1.348 8.309A4.582 4.582 0 0 1 1.689 2zm3.158.252A3.082 3.082 0 0 0 2.49 7.337l.005.005L7.8 13.664a.264.264 0 0 0 .311.069.262.262 0 0 0 .09-.069l5.312-6.33a3.043 3.043 0 0 0 .68-2.573 3.118 3.118 0 0 0-2.551-2.463 3.079 3.079 0 0 0-2.612.816l-.007.007a1.501 1.501 0 0 1-2.045 0l-.009-.008a3.082 3.082 0 0 0-2.121-.84z"/></svg>
+            </button>
+        </div>
+
+        <div class="player-center">
+            <div class="player-controls">
+                <button id="shuffle-btn" onclick="toggleShuffle()" title="Shuffle">
+                    <svg viewBox="0 0 16 16"><path d="M13.151.922a.75.75 0 1 0-1.06 1.06L13.109 3H11.16a3.75 3.75 0 0 0-2.873 1.34l-6.173 7.356A2.25 2.25 0 0 1 .39 12.5H0V14h.391a3.75 3.75 0 0 0 2.873-1.34l6.173-7.356a2.25 2.25 0 0 1 1.724-.804h1.947l-1.017 1.018a.75.75 0 0 0 1.06 1.06l2.306-2.306a.75.75 0 0 0 0-1.06L13.15.922zM.391 3.5H0V2h.391c1.109 0 2.16.49 2.873 1.34L4.89 5.277l-.979 1.167-1.796-2.14A2.25 2.25 0 0 0 .39 3.5z"/><path d="m7.5 10.723.98-1.167 1.796 2.14a2.25 2.25 0 0 0 1.724.804h1.947l-1.017-1.018a.75.75 0 1 1 1.06-1.06l2.306 2.306a.75.75 0 0 1 0 1.06L13.15 16.06a.75.75 0 1 1-1.06-1.06l1.018-1.018H11.16a3.75 3.75 0 0 1-2.873-1.34L7.5 10.723z"/></svg>
+                </button>
+                <button onclick="prevTrack()" title="Previous">
+                    <svg viewBox="0 0 16 16"><path d="M3.3 1a.7.7 0 0 1 .7.7v5.15l9.95-5.744a.7.7 0 0 1 1.05.606v12.575a.7.7 0 0 1-1.05.607L4 9.149V14.3a.7.7 0 0 1-.7.7H2.7a.7.7 0 0 1-.7-.7V1.7a.7.7 0 0 1 .7-.7h.6z"/></svg>
+                </button>
+                <button class="p-play-btn" id="player-play-btn" onclick="togglePlay()">
+                    <svg viewBox="0 0 16 16" id="play-icon"><path d="M3 1.713a.7.7 0 0 1 1.05-.607l10.89 6.288a.7.7 0 0 1 0 1.212L4.05 14.894A.7.7 0 0 1 3 14.288V1.713z"/></svg>
+                </button>
+                <button onclick="nextTrack()" title="Next">
+                    <svg viewBox="0 0 16 16"><path d="M12.7 1a.7.7 0 0 0-.7.7v5.15L2.05 1.107A.7.7 0 0 0 1 1.712v12.575a.7.7 0 0 0 1.05.607L12 9.149V14.3a.7.7 0 0 0 .7.7h.6a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7h-.6z"/></svg>
+                </button>
+                <button id="repeat-btn" onclick="toggleRepeat()" title="Repeat">
+                    <svg viewBox="0 0 16 16"><path d="M0 4.75A3.75 3.75 0 0 1 3.75 1h8.5A3.75 3.75 0 0 1 16 4.75v5a3.75 3.75 0 0 1-3.75 3.75H9.81l1.018 1.018a.75.75 0 1 1-1.06 1.06L7.232 13.04a.75.75 0 0 1 0-1.06l2.535-2.535a.75.75 0 1 1 1.061 1.06l-.96.96h2.382A2.25 2.25 0 0 0 14.5 9.25v-5a2.25 2.25 0 0 0-2.25-2.25h-8.5A2.25 2.25 0 0 0 1.5 4.25v5A2.25 2.25 0 0 0 3.75 11.5H5v1.5H3.75A3.75 3.75 0 0 1 0 9.25v-5z"/></svg>
+                </button>
+            </div>
+            <div class="p-progress">
+                <span class="p-time" id="current-time">0:00</span>
+                <div class="prog-bar" id="progress-bar" onclick="seekTrack(event)">
+                    <div class="prog-fill" id="progress-fill" style="width:0%"></div>
+                </div>
+                <span class="p-time right" id="total-time">0:00</span>
+            </div>
+        </div>
+
+        <div class="player-right">
+            <button onclick="toggleMute()" title="Mute">
+                <svg viewBox="0 0 16 16"><path d="M9.741.85a.75.75 0 0 1 .375.65v13a.75.75 0 0 1-1.125.65l-6.925-4a3.642 3.642 0 0 1-1.33-4.967 3.639 3.639 0 0 1 1.33-1.332l6.925-4a.75.75 0 0 1 .75 0zm-6.924 5.3a2.139 2.139 0 0 0 0 3.7l5.683 3.282V2.868L2.817 6.15z"/><path d="M11.5 4.75a.75.75 0 0 1 .75-.75 4.405 4.405 0 0 1 0 8h-.008a.75.75 0 0 1 0-1.5 2.905 2.905 0 0 0 .008-5h-.001a.75.75 0 0 1-.75-.75z"/></svg>
+            </button>
+            <div class="vol-bar" id="volume-bar" onclick="setVolume(event)">
+                <div class="vol-fill" id="volume-fill"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<audio id="audio-player"></audio>
+
+<script>
+/* ══════════════════════════════════════════
+   SONGS — MP3s are in the "songs/" subfolder
+   ══════════════════════════════════════════ */
+
+// Unique Unsplash image pools (rainy nature/forest/roads, futuristic realism, hacker/code/404)
+const COVERS = [
+    "https://images.unsplash.com/photo-1519692933481-e162a57d6721?w=300&h=300&fit=crop",  // rainy forest road
+    "https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?w=300&h=300&fit=crop",  // futuristic city rain
+    "https://images.unsplash.com/photo-1518770660439-4636190af475?w=300&h=300&fit=crop",  // circuit board / hacker
+    "https://images.unsplash.com/photo-1504701954957-2010ec3bcec1?w=300&h=300&fit=crop",  // rainy window city
+    "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=300&h=300&fit=crop",  // matrix green code
+    "https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=300&h=300&fit=crop",  // rainy nature forest
+    "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=300&h=300&fit=crop",  // neon city futuristic
+    "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=300&h=300&fit=crop",  // retro CRT hacker monitor
+    "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=300&h=300&fit=crop",  // misty forest road
+    "https://images.unsplash.com/photo-1610296669228-602fa827fc1f?w=300&h=300&fit=crop",  // sci-fi server room
+    "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?w=300&h=300&fit=crop",  // rain on window
+    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&h=300&fit=crop",  // dark hacker terminal
+    "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=300&h=300&fit=crop",  // aerial rainy forest
+    "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=300&h=300&fit=crop",  // server cables neon
+    "https://images.unsplash.com/photo-1428908728789-d2de25dbd4e2?w=300&h=300&fit=crop",  // foggy forest path
+    "https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=300&h=300&fit=crop",  // laptop code dark
+    "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=300&fit=crop",  // mountain fog rain
+    "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=300&h=300&fit=crop",  // AI robot face
+    "https://images.unsplash.com/photo-1473773508845-188df298d2d1?w=300&h=300&fit=crop",  // rainy puddle city
+    "https://images.unsplash.com/photo-1543966888-7c1dc482a810?w=300&h=300&fit=crop",  // dark neon street rain
+    "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=300&h=300&fit=crop",  // moody car headlights rain
+    "https://images.unsplash.com/photo-1484417894907-623942c8ee29?w=300&h=300&fit=crop",  // code on screen hacker
+    "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=300&h=300&fit=crop",  // empty rainy road
+    "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=300&h=300&fit=crop",  // cybersecurity lock
+    "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=300&h=300&fit=crop",  // dark starfield cosmos
+    "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=300&h=300&fit=crop",  // paris rainy night
+    "https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=300&h=300&fit=crop",  // urban rain alley
+    "https://images.unsplash.com/photo-1462275646964-a0e3386b89fa?w=300&h=300&fit=crop",  // dark code terminal green
+    "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=300&h=300&fit=crop",  // misty mountain lake
+    "https://images.unsplash.com/photo-1614064641938-3bbee52942c7?w=300&h=300&fit=crop",  // futuristic neon corridor
+    "https://images.unsplash.com/photo-1504253492562-cc2f56e42e83?w=300&h=300&fit=crop",  // forest rain drops
+    "https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?w=300&h=300&fit=crop",  // moody dark city
+    "https://images.unsplash.com/photo-1597773150796-e5c14ebecbf5?w=300&h=300&fit=crop",  // binary data stream
+    "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=300&h=300&fit=crop",  // earth from space
+    "https://images.unsplash.com/photo-1497366216548-37526070297c?w=300&h=300&fit=crop",  // dark office tech
+    "https://images.unsplash.com/photo-1555680202-c86f0e12f086?w=300&h=300&fit=crop",  // moody lighthouse storm
+    "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=300&h=300&fit=crop",  // aurora northern lights
+    "https://images.unsplash.com/photo-1504618223053-559bdef9ad5c?w=300&h=300&fit=crop",  // rainy cobblestone street
+    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=300&h=300&fit=crop",  // data globe tech
+    "https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=300&h=300&fit=crop",  // code keyboard hacker
+    "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=300&h=300&fit=crop",  // analog synth dark
+    "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=300&h=300&fit=crop",  // space nebula
+    "https://images.unsplash.com/photo-1521295121783-8a321d551ad2?w=300&h=300&fit=crop",  // person rainy umbrella
+    "https://images.unsplash.com/photo-1548407260-da850faa41e3?w=300&h=300&fit=crop",  // neon sign rain
+    "https://images.unsplash.com/photo-1535016120720-40c646be5580?w=300&h=300&fit=crop",  // screen glow dark
+    "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=300&h=300&fit=crop",  // foggy bridge
+    "https://images.unsplash.com/photo-1506259091721-347e791bab0f?w=300&h=300&fit=crop",  // dark ocean shore
+    "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=300&h=300&fit=crop",  // team laptop dark office
+    "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=300&h=300&fit=crop",  // network cables
+    "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=300&h=300&fit=crop",  // galaxy spiral
+    "https://images.unsplash.com/photo-1589149098258-3e9102cd63d3?w=300&h=300&fit=crop",  // foggy road forest
+    "https://images.unsplash.com/photo-1444080748397-f442aa95c3e5?w=300&h=300&fit=crop",  // stars night sky
+    "https://images.unsplash.com/photo-1515630278258-407f994714be?w=300&h=300&fit=crop",  // dark rainy night city
+    "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=300&fit=crop",  // mountain mist fog
+    "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=300&h=300&fit=crop",  // foggy bridge 2
+    "https://images.unsplash.com/photo-1498036882173-b41c28a8ba34?w=300&h=300&fit=crop",  // sakura rain
+    "https://images.unsplash.com/photo-1504253492562-cc2f56e42e83?w=300&h=300&fit=crop",  // rain drops leaf
+    "https://images.unsplash.com/photo-1462275646964-a0e3386b89fa?w=300&h=300&fit=crop",  // terminal green
+    "https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=300&h=300&fit=crop",  // laptop dark 2
+    "https://images.unsplash.com/photo-1560472355-536de3962603?w=300&h=300&fit=crop",  // neon tokyo rain
+    "https://images.unsplash.com/photo-1504701954957-2010ec3bcec1?w=300&h=300&fit=crop",  // rain blur street
+    "https://images.unsplash.com/photo-1533134486753-c833f0ed4866?w=300&h=300&fit=crop",  // dark cloudy mountains
+    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&h=300&fit=crop",  // hacker terminal dark 2
+    "https://images.unsplash.com/photo-1481349518771-20055b2a7b24?w=300&h=300&fit=crop",  // neon sign night
+    "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=300&h=300&fit=crop",  // city night aerial
+    "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=300&h=300&fit=crop",  // forest aerial 2
+    "https://images.unsplash.com/photo-1519692933481-e162a57d6721?w=300&h=300&fit=crop",  // rainy road forest 2
+    "https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?w=300&h=300&fit=crop",  // futuristic rain 2
+    "https://images.unsplash.com/photo-1518770660439-4636190af475?w=300&h=300&fit=crop",  // circuit 2
+    "https://images.unsplash.com/photo-1504701954957-2010ec3bcec1?w=300&h=300&fit=crop",  // rainy window 2
+    "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=300&h=300&fit=crop",  // matrix 2
+    "https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=300&h=300&fit=crop",  // rainy nature 2
+    "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=300&h=300&fit=crop",  // neon 2
+    "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=300&h=300&fit=crop",  // retro monitor 2
+    "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=300&h=300&fit=crop",  // misty road 2
+    "https://images.unsplash.com/photo-1610296669228-602fa827fc1f?w=300&h=300&fit=crop",  // server room 2
+    "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?w=300&h=300&fit=crop",  // rain glass 2
+    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&h=300&fit=crop",  // dark terminal 2
+    "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=300&h=300&fit=crop",  // aerial forest 3
+    "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=300&h=300&fit=crop",  // cables neon 2
+    "https://images.unsplash.com/photo-1428908728789-d2de25dbd4e2?w=300&h=300&fit=crop",  // foggy path 2
+    "https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=300&h=300&fit=crop",  // laptop 3
+    "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=300&fit=crop",  // mountain fog 2
+    "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=300&h=300&fit=crop",  // AI face 2
+    "https://images.unsplash.com/photo-1473773508845-188df298d2d1?w=300&h=300&fit=crop",  // rain puddle 2
+    "https://images.unsplash.com/photo-1543966888-7c1dc482a810?w=300&h=300&fit=crop",  // neon street 2
+    "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=300&h=300&fit=crop",  // car headlights 2
+    "https://images.unsplash.com/photo-1484417894907-623942c8ee29?w=300&h=300&fit=crop",  // code screen 2
+    "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=300&h=300&fit=crop",  // empty road 2
+    "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=300&h=300&fit=crop",  // cyber lock 2
+    "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=300&h=300&fit=crop",  // cosmos 2
+    "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=300&h=300&fit=crop",  // paris rain 2
+    "https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=300&h=300&fit=crop",  // alley rain 2
+    "https://images.unsplash.com/photo-1462275646964-a0e3386b89fa?w=300&h=300&fit=crop",  // terminal 3
+    "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=300&h=300&fit=crop",  // mountain lake 2
+    "https://images.unsplash.com/photo-1614064641938-3bbee52942c7?w=300&h=300&fit=crop",  // neon corridor 2
+    "https://images.unsplash.com/photo-1504253492562-cc2f56e42e83?w=300&h=300&fit=crop",  // rain drops 2
+    "https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?w=300&h=300&fit=crop",  // dark city 2
+    "https://images.unsplash.com/photo-1597773150796-e5c14ebecbf5?w=300&h=300&fit=crop",  // binary 2
+    "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=300&h=300&fit=crop",  // earth space 2
+    "https://images.unsplash.com/photo-1497366216548-37526070297c?w=300&h=300&fit=crop",  // office dark 2
+    "https://images.unsplash.com/photo-1555680202-c86f0e12f086?w=300&h=300&fit=crop",  // lighthouse 2
+    "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=300&h=300&fit=crop",  // aurora 2
+    "https://images.unsplash.com/photo-1504618223053-559bdef9ad5c?w=300&h=300&fit=crop",  // cobblestone 2
+    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=300&h=300&fit=crop",  // data globe 2
+    "https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=300&h=300&fit=crop",  // keyboard hacker 2
+    "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=300&h=300&fit=crop",  // synth dark 2
+    "https://images.unsplash.com/photo-1521295121783-8a321d551ad2?w=300&h=300&fit=crop",  // umbrella rain 2
+    "https://images.unsplash.com/photo-1548407260-da850faa41e3?w=300&h=300&fit=crop",  // neon sign 2
+    "https://images.unsplash.com/photo-1535016120720-40c646be5580?w=300&h=300&fit=crop",  // screen glow 2
+    "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=300&h=300&fit=crop",  // bridge fog 2
+    "https://images.unsplash.com/photo-1506259091721-347e791bab0f?w=300&h=300&fit=crop",  // dark ocean 2
+    "https://images.unsplash.com/photo-1533134486753-c833f0ed4866?w=300&h=300&fit=crop",  // cloudy mountains 2
+    "https://images.unsplash.com/photo-1589149098258-3e9102cd63d3?w=300&h=300&fit=crop",  // foggy forest road 2
+    "https://images.unsplash.com/photo-1444080748397-f442aa95c3e5?w=300&h=300&fit=crop",  // stars sky 2
+];
+
+const songs = [
+    { title: "California Love (Original Version)", artist: "2Pac", album: "", duration: "", src: "songs/2Pac - California Love (Original Version)....mp3", cover: COVERS[0] },
+    { title: "DONTTRUSTME", artist: "3OH!3", album: "", duration: "", src: "songs/3OH!3 - DONTTRUSTME.mp3", cover: COVERS[1] },
+    { title: "21 Questions", artist: "50 Cent", album: "", duration: "", src: "songs/50 Cent - 21 Questions.mp3", cover: COVERS[2] },
+    { title: "Just A Lil Bit", artist: "50 Cent", album: "", duration: "", src: "songs/50 Cent - Just A Lil Bit.mp3", cover: COVERS[3] },
+    { title: "P.I.M.P.", artist: "50 Cent", album: "", duration: "", src: "songs/50 Cent - P.I.M.P..mp3", cover: COVERS[4] },
+    { title: "Jungle", artist: "A Boogie Wit da Hoodie", album: "", duration: "", src: "songs/A Boogie Wit da Hoodie - Jungle.mp3", cover: COVERS[5] },
+    { title: "I Smoked Away My Brain", artist: "A$AP Rocky", album: "", duration: "", src: "songs/A$AP_Rocky_I_Smoked_Away_My_Brain_.mp3", cover: COVERS[6] },
+    { title: "I m Good Luv, Enjoy", artist: "Aaron May", album: "", duration: "", src: "songs/Aaron May - I m Good Luv, Enjoy.mp3", cover: COVERS[7] },
+    { title: "Man in the Box", artist: "Alice in Chains", album: "", duration: "", src: "songs/Alice in Chains - Man in the Box.mp3", cover: COVERS[8] },
+    { title: "Songs Of Love, Destruction", artist: "Astro Creep 2000", album: "", duration: "", src: "songs/Astro Creep 2000 Songs Of Love, Destruc....mp3", cover: COVERS[9] },
+    { title: "Rocket", artist: "Bearded Legend", album: "", duration: "", src: "songs/Bearded Legend - Rocket.mp3", cover: COVERS[10] },
+    { title: "Stress", artist: "Bearded Legend", album: "", duration: "", src: "songs/Bearded Legend - Stress.mp3", cover: COVERS[11] },
+    { title: "23", artist: "Chase Atlantic", album: "", duration: "", src: "songs/Chase Atlantic - 23.mp3", cover: COVERS[12] },
+    { title: "Cassie", artist: "Chase Atlantic", album: "", duration: "", src: "songs/Chase Atlantic - Cassie.mp3", cover: COVERS[13] },
+    { title: "Church", artist: "Chase Atlantic", album: "", duration: "", src: "songs/Chase Atlantic - Church.mp3", cover: COVERS[14] },
+    { title: "HER", artist: "Chase Atlantic", album: "", duration: "", src: "songs/Chase Atlantic - HER.mp3", cover: COVERS[15] },
+    { title: "Moonlight", artist: "Chase Atlantic", album: "", duration: "", src: "songs/Chase Atlantic - Moonlight.mp3", cover: COVERS[16] },
+    { title: "PARANOID", artist: "Chase Atlantic", album: "", duration: "", src: "songs/Chase Atlantic - PARANOID.mp3", cover: COVERS[17] },
+    { title: "Right Here", artist: "Chase Atlantic", album: "", duration: "", src: "songs/Chase Atlantic - Right Here.mp3", cover: COVERS[18] },
+    { title: "The Walls", artist: "Chase Atlantic", album: "", duration: "", src: "songs/Chase Atlantic - The Walls.mp3", cover: COVERS[19] },
+    { title: "Living Life, In The Night", artist: "Cheriimoya", album: "", duration: "", src: "songs/Cheriimoya - Living Life, In The Night.mp3", cover: COVERS[20] },
+    { title: "Country Grammar CD 1 Track 2", artist: "Nelly", album: "Country Grammar", duration: "", src: "songs/Country Grammar CD 1 TRACK 2 (320).m....mp3", cover: COVERS[21] },
+    { title: "My Band", artist: "D12", album: "", duration: "", src: "songs/D12 - My Band.mp3", cover: COVERS[22] },
+    { title: "Pimp Like Me", artist: "D12", album: "", duration: "", src: "songs/D12 - Pimp Like Me.mp3", cover: COVERS[23] },
+    { title: "Purple Pills", artist: "D12", album: "", duration: "", src: "songs/D12 - Purple Pills.mp3", cover: COVERS[24] },
+    { title: "Dang! (feat. Anderson .Paak)", artist: "Mac Miller", album: "", duration: "", src: "songs/Dang! (feat. Anderson .Paak) CD 1 TRAC....mp3", cover: COVERS[25] },
+    { title: "Ima Pervert", artist: "Devilish Trio", album: "", duration: "", src: "songs/Devilish Trio - Ima Pervert.mp3", cover: COVERS[26] },
+    { title: "Wish (feat. Trippie Redd)", artist: "Diplo", album: "", duration: "", src: "songs/Diplo - Wish (feat. Trippie Redd).mp3", cover: COVERS[27] },
+    { title: "I Need A Doctor", artist: "Dr. Dre", album: "", duration: "", src: "songs/Dr. Dre - I Need A Doctor.mp3", cover: COVERS[28] },
+    { title: "Beautiful", artist: "Eminem", album: "", duration: "", src: "songs/Eminem - Beautiful.mp3", cover: COVERS[29] },
+    { title: "Big Weenie", artist: "Eminem", album: "", duration: "", src: "songs/Eminem - Big Weenie.mp3", cover: COVERS[30] },
+    { title: "Cleanin Out My Closet", artist: "Eminem", album: "", duration: "", src: "songs/Eminem - Cleanin Out My Closet.mp3", cover: COVERS[31] },
+    { title: "FACK", artist: "Eminem", album: "", duration: "", src: "songs/Eminem - FACK.mp3", cover: COVERS[32] },
+    { title: "Hailie s Song", artist: "Eminem", album: "", duration: "", src: "songs/Eminem - Hailie s Song.mp3", cover: COVERS[33] },
+    { title: "Just Don t Give A Fuck", artist: "Eminem", album: "", duration: "", src: "songs/Eminem - Just Don t Give A Fuck.mp3", cover: COVERS[34] },
+    { title: "Kill You", artist: "Eminem", album: "", duration: "", src: "songs/Eminem - Kill You.mp3", cover: COVERS[35] },
+    { title: "Marshall Mathers", artist: "Eminem", album: "", duration: "", src: "songs/Eminem - Marshall Mathers.mp3", cover: COVERS[36] },
+    { title: "Sing For The Moment", artist: "Eminem", album: "", duration: "", src: "songs/Eminem - Sing For The Moment.mp3", cover: COVERS[37] },
+    { title: "Superman", artist: "Eminem", album: "", duration: "", src: "songs/Eminem - Superman.mp3", cover: COVERS[38] },
+    { title: "The Real Slim Shady", artist: "Eminem", album: "", duration: "", src: "songs/Eminem - The Real Slim Shady.mp3", cover: COVERS[39] },
+    { title: "The Way I Am", artist: "Eminem", album: "", duration: "", src: "songs/Eminem - The Way I Am.mp3", cover: COVERS[40] },
+    { title: "When I m Gone", artist: "Eminem", album: "", duration: "", src: "songs/Eminem - When I m Gone.mp3", cover: COVERS[41] },
+    { title: "Without Me", artist: "Eminem", album: "", duration: "", src: "songs/Eminem - Without Me.mp3", cover: COVERS[42] },
+    { title: "Why Don't U (feat. Abra & iLove...)", artist: "Father", album: "", duration: "", src: "songs/Father - Why Don't U (feat. Abra & iLove....mp3", cover: COVERS[43] },
+    { title: "Close To You", artist: "Frank Ocean", album: "", duration: "", src: "songs/Frank Ocean - Close To You.mp3", cover: COVERS[44] },
+    { title: "White Ferrari", artist: "Frank Ocean", album: "", duration: "", src: "songs/Frank Ocean - White Ferrari.mp3", cover: COVERS[45] },
+    { title: "Awake", artist: "Godsmack", album: "", duration: "", src: "songs/Godsmack - Awake.mp3", cover: COVERS[46] },
+    { title: "Lot Lizard", artist: "GWAR", album: "", duration: "", src: "songs/GWAR - Lot Lizard.mp3", cover: COVERS[47] },
+    { title: "Saddam a Go-Go", artist: "GWAR", album: "", duration: "", src: "songs/GWAR - Saddam a Go-Go.mp3", cover: COVERS[48] },
+    { title: "BOO", artist: "H3adband", album: "", duration: "", src: "songs/H3adband - BOO.mp3", cover: COVERS[49] },
+    { title: "In My Room", artist: "Insane Clown Posse", album: "", duration: "", src: "songs/Insane Clown Posse - In My Room.mp3", cover: COVERS[50] },
+    { title: "Wet Dreamz", artist: "J. Cole", album: "", duration: "", src: "songs/J. Cole - Wet Dreamz.mp3", cover: COVERS[51] },
+    { title: "Love Is Only a Feeling", artist: "Joey Bada$$", album: "", duration: "", src: "songs/Joey Bada$$ - Love Is Only a Feeling.mp3", cover: COVERS[52] },
+    { title: "Day 'N' Nite (Nightmare)", artist: "Kid Cudi", album: "", duration: "", src: "songs/Kid Cudi - Day 'N' Nite (Nightmare).mp3", cover: COVERS[53] },
+    { title: "I.M.Y (Miss You)", artist: "Kodak Black", album: "", duration: "", src: "songs/Kodak Black - I.M.Y (Miss You).mp3", cover: COVERS[54] },
+    { title: "Institution", artist: "Kodak Black", album: "", duration: "", src: "songs/Kodak Black - Institution.mp3", cover: COVERS[55] },
+    { title: "Love & War", artist: "Kodak Black", album: "", duration: "", src: "songs/Kodak Black - Love & War.mp3", cover: COVERS[56] },
+    { title: "Good God", artist: "Koяn", album: "", duration: "", src: "songs/KoЯn - Good God.mp3", cover: COVERS[57] },
+    { title: "feelz", artist: "Lil Peep", album: "", duration: "", src: "songs/Lil Peep - feelz.mp3", cover: COVERS[58] },
+    { title: "TBT", artist: "Lucki", album: "", duration: "", src: "songs/Lucki - TBT.mp3", cover: COVERS[59] },
+    { title: "Blueberry Yum Yum", artist: "Ludacris", album: "", duration: "", src: "songs/Ludacris - Blueberry Yum Yum.mp3", cover: COVERS[60] },
+    { title: "2009", artist: "MAC MILLER", album: "", duration: "", src: "songs/MAC MILLER - 2009.mp3", cover: COVERS[61] },
+    { title: "Blue World", artist: "MAC MILLER", album: "", duration: "", src: "songs/MAC MILLER - Blue World.mp3", cover: COVERS[62] },
+    { title: "Cinderella (feat. Ty Dolla $ign)", artist: "MAC MILLER", album: "", duration: "", src: "songs/MAC MILLER - Cinderella (feat. Ty Dolla $....mp3", cover: COVERS[63] },
+    { title: "Circles", artist: "MAC MILLER", album: "", duration: "", src: "songs/MAC MILLER - Circles.mp3", cover: COVERS[64] },
+    { title: "Congratulations (feat. Bilal)", artist: "MAC MILLER", album: "", duration: "", src: "songs/MAC MILLER - Congratulations (feat. Bila....mp3", cover: COVERS[65] },
+    { title: "Dunno", artist: "MAC MILLER", album: "", duration: "", src: "songs/MAC MILLER - Dunno.mp3", cover: COVERS[66] },
+    { title: "Funeral", artist: "MAC MILLER", album: "", duration: "", src: "songs/MAC MILLER - Funeral.mp3", cover: COVERS[67] },
+    { title: "Good News", artist: "MAC MILLER", album: "", duration: "", src: "songs/MAC MILLER - Good News.mp3", cover: COVERS[68] },
+    { title: "Jet Fuel", artist: "MAC MILLER", album: "", duration: "", src: "songs/MAC MILLER - Jet Fuel.mp3", cover: COVERS[69] },
+    { title: "Ladders", artist: "MAC MILLER", album: "", duration: "", src: "songs/MAC MILLER - Ladders.mp3", cover: COVERS[70] },
+    { title: "Love Lost", artist: "Mac Miller", album: "", duration: "", src: "songs/Mac Miller - Love Lost.mp3", cover: COVERS[71] },
+    { title: "Missed Calls", artist: "MAC MILLER", album: "", duration: "", src: "songs/MAC MILLER - Missed Calls.mp3", cover: COVERS[72] },
+    { title: "Objects in the Mirror", artist: "MAC MILLER", album: "", duration: "", src: "songs/MAC MILLER - Objects in the Mirror.mp3", cover: COVERS[73] },
+    { title: "Right", artist: "MAC MILLER", album: "", duration: "", src: "songs/MAC MILLER - Right.mp3", cover: COVERS[74] },
+    { title: "ROS", artist: "MAC MILLER", album: "", duration: "", src: "songs/MAC MILLER - ROS.mp3", cover: COVERS[75] },
+    { title: "Soulmate", artist: "MAC MILLER", album: "", duration: "", src: "songs/MAC MILLER - Soulmate.mp3", cover: COVERS[76] },
+    { title: "Stoned", artist: "MAC MILLER", album: "", duration: "", src: "songs/MAC MILLER - Stoned.mp3", cover: COVERS[77] },
+    { title: "Surf", artist: "MAC MILLER", album: "", duration: "", src: "songs/MAC MILLER - Surf.mp3", cover: COVERS[78] },
+    { title: "We (feat. CeeLo Green)", artist: "MAC MILLER", album: "", duration: "", src: "songs/MAC MILLER - We (feat. CeeLo Green).m....mp3", cover: COVERS[79] },
+    { title: "Wedding", artist: "MAC MILLER", album: "", duration: "", src: "songs/MAC MILLER - Wedding.mp3", cover: COVERS[80] },
+    { title: "Weekend (feat. Miguel)", artist: "MAC MILLER", album: "", duration: "", src: "songs/MAC MILLER - Weekend (feat. Miguel).m....mp3", cover: COVERS[81] },
+    { title: "What s the Use", artist: "MAC MILLER", album: "", duration: "", src: "songs/MAC MILLER - What s the Use.mp3", cover: COVERS[82] },
+    { title: "Woods", artist: "MAC MILLER", album: "", duration: "", src: "songs/MAC MILLER - Woods.mp3", cover: COVERS[83] },
+    { title: "Side Nigga Anthem", artist: "Mike Sherm", album: "", duration: "", src: "songs/Mike Sherm - Side Nigga Anthem.mp3", cover: COVERS[84] },
+    { title: "When It's Cold I'd Like To Die", artist: "Moby", album: "", duration: "", src: "songs/Moby - When It's Cold I'd Like To Die.mp3", cover: COVERS[85] },
+    { title: "Girls, Girls, Girls", artist: "Mötley Crüe", album: "", duration: "", src: "songs/Mötley Crüe - Girls, Girls, Girls.mp3", cover: COVERS[86] },
+    { title: "My Dear Melancholy CD 1 Track 6", artist: "The Weeknd", album: "My Dear Melancholy", duration: "", src: "songs/My Dear Melancholy, CD 1 TRACK 6 (320....mp3", cover: COVERS[87] },
+    { title: "Ride Wit Me", artist: "Nelly", album: "", duration: "", src: "songs/Nelly - Ride Wit Me.mp3", cover: COVERS[88] },
+    { title: "Closer", artist: "Nine Inch Nails", album: "", duration: "", src: "songs/Nine Inch Nails - Closer.mp3", cover: COVERS[89] },
+    { title: "The Hand That Feeds", artist: "Nine Inch Nails", album: "", duration: "", src: "songs/Nine Inch Nails - The Hand That Feeds.m....mp3", cover: COVERS[90] },
+    { title: "Gang Baby", artist: "NLE Choppa", album: "", duration: "", src: "songs/NLE Choppa - Gang Baby.mp3", cover: COVERS[91] },
+    { title: "Cowboys from Hell", artist: "Pantera", album: "", duration: "", src: "songs/Pantera - Cowboys from Hell.mp3", cover: COVERS[92] },
+    { title: "King for a Day", artist: "Pierce the Veil", album: "", duration: "", src: "songs/Pierce the Veil - King for a Day.mp3", cover: COVERS[93] },
+    { title: "Bulls On Par...", artist: "Rage Against the Machine", album: "", duration: "", src: "songs/Rage Against the Machine - Bulls On Par....mp3", cover: COVERS[94] },
+    { title: "Guerrilla Rad...", artist: "Rage Against the Machine", album: "", duration: "", src: "songs/Rage Against the Machine - Guerrilla Rad....mp3", cover: COVERS[95] },
+    { title: "Renegades", artist: "Rage Against the Machine", album: "", duration: "", src: "songs/Rage Against the Machine - Renegades ....mp3", cover: COVERS[96] },
+    { title: "Still Writing In My Diary 2nd Entry", artist: "", album: "", duration: "", src: "songs/Still Writing In My Diary 2nd Entry CD 1 T....mp3", cover: COVERS[97] },
+    { title: "That s All She Wrote", artist: "T.I.", album: "", duration: "", src: "songs/T.I. - That s All She Wrote.mp3", cover: COVERS[98] },
+    { title: "Brotherhood of the Snake", artist: "Testament", album: "", duration: "", src: "songs/Testament - Brotherhood of the Snake.m....mp3", cover: COVERS[99] },
+    { title: "House Of The Rising Sun", artist: "The Animals", album: "", duration: "", src: "songs/The Animals - House Of The Rising Sun....mp3", cover: COVERS[100] },
+    { title: "You Get Me So High", artist: "The Neighbourhood", album: "", duration: "", src: "songs/The Neighbourhood - You Get Me So Hi....mp3", cover: COVERS[101] },
+    { title: "Big Poppa (2005 Remaster)", artist: "The Notorious B.I.G.", album: "", duration: "", src: "songs/The Notorious B.I.G. - Big Poppa (2005 R....mp3", cover: COVERS[102] },
+    { title: "Hypnotize (2014 Remaster)", artist: "The Notorious B.I.G.", album: "", duration: "", src: "songs/The Notorious B.I.G. - Hypnotize (2014 R....mp3", cover: COVERS[103] },
+    { title: "Bullet With Bu...", artist: "The Smashing Pumpkins", album: "", duration: "", src: "songs/The Smashing Pumpkins - Bullet With Bu....mp3", cover: COVERS[104] },
+    { title: "Call Out My Name", artist: "The Weeknd", album: "", duration: "", src: "songs/The Weeknd - Call Out My Name.mp3", cover: COVERS[105] },
+    { title: "Die For You", artist: "The Weeknd", album: "", duration: "", src: "songs/The Weeknd - Die For You.mp3", cover: COVERS[106] },
+    { title: "Earned It (Fifty Shades Of Grey)", artist: "The Weeknd", album: "", duration: "", src: "songs/The Weeknd - Earned It (Fifty Shades Of ....mp3", cover: COVERS[107] },
+    { title: "Heartless", artist: "The Weeknd", album: "", duration: "", src: "songs/The Weeknd - Heartless.mp3", cover: COVERS[108] },
+    { title: "Nothing Without You", artist: "The Weeknd", album: "", duration: "", src: "songs/The Weeknd - Nothing Without You.mp3", cover: COVERS[109] },
+    { title: "Often", artist: "The Weeknd", album: "", duration: "", src: "songs/The Weeknd - Often.mp3", cover: COVERS[110] },
+    { title: "One Of The Girls", artist: "The Weeknd", album: "", duration: "", src: "songs/The Weeknd - One Of The Girls.mp3", cover: COVERS[111] },
+    { title: "The Knowing", artist: "The Weeknd", album: "", duration: "", src: "songs/The Weeknd - The Knowing.mp3", cover: COVERS[112] },
+    { title: "Until I Bleed Out", artist: "The Weeknd", album: "", duration: "", src: "songs/The Weeknd - Until I Bleed Out.mp3", cover: COVERS[113] },
+    { title: "Wicked Games", artist: "The Weeknd", album: "", duration: "", src: "songs/The Weeknd - Wicked Games.mp3", cover: COVERS[114] },
+    { title: "Or Nah (feat. The Weeknd)", artist: "Ty Dolla $ign", album: "", duration: "", src: "songs/or_nah.mp3", cover: COVERS[115] },
+    { title: "Rack City", artist: "Tyga", album: "", duration: "", src: "songs/Rack_City.mp3", cover: COVERS[116] },
+    { title: "No Hands (feat. Ros...)", artist: "Waka Flocka Flame", album: "", duration: "", src: "songs/Waka Flocka Flame - No Hands (feat. Ros....mp3", cover: COVERS[117] },
+    { title: "Best Friend", artist: "Yelawolf", album: "", duration: "", src: "songs/Yelawolf - Best Friend.mp3", cover: COVERS[118] },
+    { title: "Peaches & Eggplants (feat. ...)", artist: "Young Nudy", album: "", duration: "", src: "songs/Young Nudy - Peaches  Eggplants (feat. ....mp3", cover: COVERS[0] },
+    { title: "Crush", artist: "Yuna", album: "", duration: "", src: "songs/Yuna - Crush.mp3", cover: COVERS[1] },
+    { title: "Vampire Love", artist: "Yung Bruh", album: "", duration: "", src: "songs/Yung Bruh - Vampire Love.mp3", cover: COVERS[2] },
+];
+
+/* ══════════════════════════════════════════
+   PLAYLISTS
+   ══════════════════════════════════════════ */
+let playlists = [
+    {
+        name: "All Songs",
+        desc: "Your full library",
+        cover: COVERS[5],
+        songIds: songs.map((_, i) => i)
+    },
+];
+
+/* ══════════════════════════════════════════
+   STATE
+   ══════════════════════════════════════════ */
+let currentTrackIndex = -1;
+let currentPlaylist = 0;
+let isPlaying = false;
+let isShuffled = false;
+let repeatMode = 0;
+let searchQuery = '';
+let shuffleOrder = [];
+
+const audio = document.getElementById('audio-player');
+
+function formatTime(sec) {
+    if (isNaN(sec) || sec < 0) return '0:00';
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return m + ':' + (s < 10 ? '0' : '') + s;
+}
+
+function getCurrentSongs() {
+    const pl = playlists[currentPlaylist];
+    if (!pl) return songs;
+    return pl.songIds.map(i => songs[i]).filter(Boolean);
+}
+
+function getFilteredSongs() {
+    const all = getCurrentSongs();
+    if (!searchQuery) return all;
+    const q = searchQuery.toLowerCase();
+    return all.filter(s =>
+        s.title.toLowerCase().includes(q) ||
+        s.artist.toLowerCase().includes(q) ||
+        s.album.toLowerCase().includes(q)
+    );
+}
+
+// Maps filtered index → real playlist index
+function filteredIndexToReal(filteredIdx) {
+    const allSongs = getCurrentSongs();
+    const filtered = getFilteredSongs();
+    const song = filtered[filteredIdx];
+    return allSongs.indexOf(song);
+}
+
+function handleSearch(val) {
+    searchQuery = val;
+    renderContent();
+}
+
+/* ── RENDER ── */
+function renderSidebar() {
+    const list = document.getElementById('playlist-list');
+    list.innerHTML = '';
+    playlists.forEach((pl, i) => {
+        const el = document.createElement('div');
+        el.className = 'playlist-item' + (i === currentPlaylist ? ' active' : '');
+        el.onclick = () => { currentPlaylist = i; currentTrackIndex = -1; searchQuery = ''; document.getElementById('search-input').value = ''; renderAll(); };
+        el.innerHTML = `
+            <div class="pl-thumb">${pl.cover ? `<img src="${pl.cover}" alt="">` : `<svg viewBox="0 0 24 24"><path d="M6 3h15v15.167a3.5 3.5 0 1 1-3.5-3.5H19V5H8v10.167a3.5 3.5 0 1 1-3.5-3.5H6V3z"/></svg>`}</div>
+            <div class="pl-info">
+                <div class="pl-name">${pl.name}</div>
+                <div class="pl-meta">Playlist · ${pl.songIds.length} songs</div>
+            </div>`;
+        list.appendChild(el);
+    });
+}
+
+function renderContent() {
+    const area = document.getElementById('content-area');
+    const pl = playlists[currentPlaylist] || { name: 'All Songs', desc: '', cover: '', songIds: [] };
+    const allSongs = getCurrentSongs();
+    const filteredSongs = getFilteredSongs();
+
+    let tracksHTML = '';
+    if (filteredSongs.length === 0) {
+        tracksHTML = `<div class="no-results"><h3>No results</h3><p>Try a different search term.</p></div>`;
+    } else {
+        filteredSongs.forEach((song, fi) => {
+            const realIdx = allSongs.indexOf(song);
+            const isActive = realIdx === currentTrackIndex;
+            const playIconColor = isActive ? '#1db954' : '#fff';
+            tracksHTML += `
+            <div class="track-row ${isActive ? 'playing' : ''}" onclick="playTrackByReal(${realIdx})">
+                <div class="track-num">
+                    <span class="num">${fi + 1}</span>
+                    <span class="pi">
+                        <svg viewBox="0 0 16 16" width="13" height="13">
+                            ${isActive && isPlaying
+                                ? `<rect x="3" y="2" width="3" height="12" rx=".5" fill="${playIconColor}"/><rect x="9" y="2" width="3" height="12" rx=".5" fill="${playIconColor}"/>`
+                                : `<path d="M3 1.713a.7.7 0 0 1 1.05-.607l10.89 6.288a.7.7 0 0 1 0 1.212L4.05 14.894A.7.7 0 0 1 3 14.288V1.713z" fill="${playIconColor}"/>`
+                            }
+                        </svg>
+                    </span>
+                </div>
+                <div class="t-info">
+                    <div class="t-art"><img src="${song.cover}" alt="" loading="lazy" onerror="this.style.opacity='0'"></div>
+                    <div class="t-details">
+                        <div class="t-title">${song.title}</div>
+                        <div class="t-artist">${song.artist}</div>
+                    </div>
+                </div>
+                <div class="t-album">${song.album || song.artist}</div>
+                <div class="t-dur">${song.duration || '—'}</div>
+            </div>`;
+        });
+    }
+
+    const isPlayingAll = isPlaying && currentTrackIndex >= 0;
+
+    area.innerHTML = `
+        <div class="playlist-hero">
+            <div class="hero-art">
+                ${pl.cover ? `<img src="${pl.cover}" alt="">` : `<svg viewBox="0 0 24 24"><path d="M6 3h15v15.167a3.5 3.5 0 1 1-3.5-3.5H19V5H8v10.167a3.5 3.5 0 1 1-3.5-3.5H6V3z"/></svg>`}
+            </div>
+            <div class="hero-info">
+                <div class="hero-label">Playlist</div>
+                <h1 class="hero-title">${pl.name}</h1>
+                <div class="hero-desc">${pl.desc}</div>
+                <div class="hero-stats"><span>You</span> · ${allSongs.length} songs</div>
+            </div>
+        </div>
+        <div class="controls-bar">
+            <button class="big-play" onclick="togglePlayAll()">
+                <svg viewBox="0 0 16 16">
+                    ${isPlayingAll
+                        ? '<rect x="3.5" y="2" width="3" height="12" rx=".5"/><rect x="9.5" y="2" width="3" height="12" rx=".5"/>'
+                        : '<path d="M3 1.713a.7.7 0 0 1 1.05-.607l10.89 6.288a.7.7 0 0 1 0 1.212L4.05 14.894A.7.7 0 0 1 3 14.288V1.713z"/>'}
+                </svg>
+            </button>
+            <button class="icon-btn ${isShuffled ? 'active' : ''}" onclick="toggleShuffle()" title="Shuffle">
+                <svg viewBox="0 0 16 16"><path d="M13.151.922a.75.75 0 1 0-1.06 1.06L13.109 3H11.16a3.75 3.75 0 0 0-2.873 1.34l-6.173 7.356A2.25 2.25 0 0 1 .39 12.5H0V14h.391a3.75 3.75 0 0 0 2.873-1.34l6.173-7.356a2.25 2.25 0 0 1 1.724-.804h1.947l-1.017 1.018a.75.75 0 0 0 1.06 1.06l2.306-2.306a.75.75 0 0 0 0-1.06L13.15.922zM.391 3.5H0V2h.391c1.109 0 2.16.49 2.873 1.34L4.89 5.277l-.979 1.167-1.796-2.14A2.25 2.25 0 0 0 .39 3.5z"/><path d="m7.5 10.723.98-1.167 1.796 2.14a2.25 2.25 0 0 0 1.724.804h1.947l-1.017-1.018a.75.75 0 1 1 1.06-1.06l2.306 2.306a.75.75 0 0 1 0 1.06L13.15 16.06a.75.75 0 1 1-1.06-1.06l1.018-1.018H11.16a3.75 3.75 0 0 1-2.873-1.34L7.5 10.723z"/></svg>
+            </button>
+            <span class="song-count-badge">${filteredSongs.length === allSongs.length ? allSongs.length + ' tracks' : filteredSongs.length + ' / ' + allSongs.length + ' tracks'}</span>
+        </div>
+        <div class="track-list">
+            <div class="track-list-header">
+                <div>#</div><div>Title</div><div>Artist / Album</div><div class="col-dur">Time</div>
+            </div>
+            ${tracksHTML}
+        </div>`;
+}
+
+function renderAll() {
+    renderSidebar();
+    renderContent();
+}
+
+/* ── PLAYBACK ── */
+function playTrackByReal(realIdx) {
+    const currentSongs = getCurrentSongs();
+    if (realIdx < 0 || realIdx >= currentSongs.length) return;
+
+    // If clicking currently playing track, toggle pause
+    if (realIdx === currentTrackIndex && audio.src) {
+        if (isPlaying) {
+            audio.pause();
+            isPlaying = false;
+        } else {
+            audio.play().catch(() => {});
+            isPlaying = true;
+        }
+        updatePlayIcon();
+        renderContent();
+        return;
+    }
+
+    currentTrackIndex = realIdx;
+    const song = currentSongs[realIdx];
+    audio.src = song.src;
+    audio.load();
+    audio.play().catch(() => {});
+    isPlaying = true;
+
+    document.getElementById('player-track-name').textContent = song.title;
+    document.getElementById('player-track-artist').textContent = song.artist;
+    const artEl = document.getElementById('player-art');
+    artEl.innerHTML = song.cover ? `<img src="${song.cover}" alt="">` : '';
+
+    updatePlayIcon();
+    renderContent();
+}
+
+function togglePlay() {
+    if (currentTrackIndex < 0) { playTrackByReal(0); return; }
+    if (isPlaying) { audio.pause(); isPlaying = false; }
+    else { audio.play().catch(() => {}); isPlaying = true; }
+    updatePlayIcon();
+    renderContent();
+}
+
+function togglePlayAll() {
+    if (currentTrackIndex < 0) { playTrackByReal(0); }
+    else { togglePlay(); }
+}
+
+function nextTrack() {
+    const songs = getCurrentSongs();
+    if (!songs.length) return;
+    if (isShuffled && shuffleOrder.length) {
+        const idx = shuffleOrder.indexOf(currentTrackIndex);
+        const next = shuffleOrder[(idx + 1) % shuffleOrder.length];
+        playTrackByReal(next);
+    } else {
+        playTrackByReal((currentTrackIndex + 1) % songs.length);
+    }
+}
+
+function prevTrack() {
+    if (audio.currentTime > 3) { audio.currentTime = 0; return; }
+    const songs = getCurrentSongs();
+    if (!songs.length) return;
+    let prev = currentTrackIndex - 1;
+    if (prev < 0) prev = songs.length - 1;
+    playTrackByReal(prev);
+}
+
+function toggleShuffle() {
+    isShuffled = !isShuffled;
+    if (isShuffled) {
+        shuffleOrder = [...getCurrentSongs().keys()].sort(() => Math.random() - 0.5);
+    }
+    document.getElementById('shuffle-btn').style.color = isShuffled ? 'var(--green)' : '';
+    renderContent();
+}
+
+function toggleRepeat() {
+    repeatMode = (repeatMode + 1) % 3;
+    const btn = document.getElementById('repeat-btn');
+    btn.style.color = repeatMode > 0 ? 'var(--green)' : '';
+}
+
+function updatePlayIcon() {
+    const icon = document.getElementById('play-icon');
+    if (isPlaying) {
+        icon.innerHTML = '<rect x="3.5" y="2" width="3" height="12" rx=".5"/><rect x="9.5" y="2" width="3" height="12" rx=".5"/>';
+    } else {
+        icon.innerHTML = '<path d="M3 1.713a.7.7 0 0 1 1.05-.607l10.89 6.288a.7.7 0 0 1 0 1.212L4.05 14.894A.7.7 0 0 1 3 14.288V1.713z"/>';
+    }
+}
+
+function seekTrack(e) {
+    const bar = document.getElementById('progress-bar');
+    const rect = bar.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    if (audio.duration) audio.currentTime = pct * audio.duration;
+}
+
+function setVolume(e) {
+    const bar = document.getElementById('volume-bar');
+    const rect = bar.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    audio.volume = pct;
+    document.getElementById('volume-fill').style.width = (pct * 100) + '%';
+}
+
+function toggleMute() {
+    audio.muted = !audio.muted;
+    document.getElementById('volume-fill').style.width = audio.muted ? '0%' : (audio.volume * 100) + '%';
+}
+
+function createPlaylist() {
+    const name = prompt('Playlist name:');
+    if (!name) return;
+    playlists.push({ name, desc: '', cover: '', songIds: [] });
+    currentPlaylist = playlists.length - 1;
+    renderAll();
+}
+
+/* ── EVENTS ── */
+audio.addEventListener('timeupdate', () => {
+    if (!audio.duration) return;
+    const pct = (audio.currentTime / audio.duration) * 100;
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('current-time').textContent = formatTime(audio.currentTime);
+    document.getElementById('total-time').textContent = formatTime(audio.duration);
+});
+
+audio.addEventListener('ended', () => {
+    if (repeatMode === 2) { audio.currentTime = 0; audio.play(); }
+    else { nextTrack(); }
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT') return;
+    if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+    if (e.code === 'ArrowRight' && e.shiftKey) nextTrack();
+    if (e.code === 'ArrowLeft' && e.shiftKey) prevTrack();
+});
+
+renderAll();
+</script>
+</body>
+</html>
